@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/manu/bb/internal/client"
 	"github.com/manu/bb/internal/config"
 	"github.com/manu/bb/internal/output"
+	"github.com/manu/bb/internal/validation"
 	"github.com/spf13/cobra"
 )
 
@@ -23,8 +25,24 @@ func NewRepoCmd(flags *GlobalFlags) *cobra.Command {
 	return cmd
 }
 
+func repoColumns() []output.Column {
+	return []output.Column{
+		{Header: "SLUG", Width: 20},
+		{Header: "NAME", Width: 25},
+		{Header: "DESCRIPTION", Width: 35},
+		{Header: "STATE", Width: 12},
+		{Header: "PROJECT", Width: 10},
+	}
+}
+
+func repoRow(r client.Repository) []string {
+	return []string{r.Slug, r.Name, r.Description, r.State, r.Project.Key}
+}
+
 func newRepoListCmd(flags *GlobalFlags) *cobra.Command {
-	var limit, page int
+	var limitFlag, page int
+	var allPages bool
+
 	cmd := &cobra.Command{
 		Use:   "list [project]",
 		Short: "List repositories in a project",
@@ -38,31 +56,39 @@ func newRepoListCmd(flags *GlobalFlags) *cobra.Command {
 				return err
 			}
 			ctx := context.Background()
+			limit := validation.ClampLimit(limitFlag)
 			start := (page - 1) * limit
-			results, err := c.ListRepositories(ctx, project, start, limit)
-			if err != nil {
-				return err
+
+			var repos []client.Repository
+			if allPages {
+				repos, err = client.GetAll[client.Repository](ctx, c, "/projects/"+project+"/repos", nil, limit)
+				if err != nil {
+					return err
+				}
+			} else {
+				resp, err := c.ListRepositories(ctx, project, start, limit)
+				if err != nil {
+					return err
+				}
+				repos = resp.Values
 			}
+
 			if flags.JSON || flags.Format != "" {
-				return printFormatted(flags, results.Values)
+				return printFormatted(flags, repos)
 			}
-			cols := []output.Column{
-				{Header: "SLUG", Width: 25},
-				{Header: "NAME", Width: 30},
-				{Header: "STATE", Width: 10},
-				{Header: "DESCRIPTION", Width: 40},
-			}
-			tf := output.NewTableFormatter(cols, flags.NoColor)
+
+			tf := output.NewTableFormatter(repoColumns(), flags.NoColor)
 			var rows [][]string
-			for _, r := range results.Values {
-				rows = append(rows, []string{r.Slug, r.Name, r.State, r.Description})
+			for _, r := range repos {
+				rows = append(rows, repoRow(r))
 			}
 			fmt.Print(tf.FormatRows(rows))
 			return nil
 		},
 	}
-	cmd.Flags().IntVar(&limit, "limit", 25, "items per page")
+	cmd.Flags().IntVar(&limitFlag, "limit", 25, "items per page")
 	cmd.Flags().IntVar(&page, "page", 1, "page number")
+	cmd.Flags().BoolVar(&allPages, "all", false, "fetch all results")
 	return cmd
 }
 
@@ -86,12 +112,10 @@ func newRepoGetCmd(flags *GlobalFlags) *cobra.Command {
 			if flags.JSON || flags.Format != "" {
 				return printFormatted(flags, r)
 			}
-			fmt.Printf("Slug:        %s\n", r.Slug)
-			fmt.Printf("Name:        %s\n", r.Name)
-			fmt.Printf("Project:     %s\n", r.Project.Key)
-			fmt.Printf("State:       %s\n", r.State)
-			fmt.Printf("Forkable:    %t\n", r.Forkable)
-			fmt.Printf("Description: %s\n", r.Description)
+
+			tf := output.NewTableFormatter(repoColumns(), flags.NoColor)
+			rows := [][]string{repoRow(*r)}
+			fmt.Print(tf.FormatRows(rows))
 			return nil
 		},
 	}
@@ -102,24 +126,19 @@ func newRepoCreateCmd(flags *GlobalFlags) *cobra.Command {
 	var forkable bool
 
 	cmd := &cobra.Command{
-		Use:   "create [project] <name>",
+		Use:   "create <project> <name>",
 		Short: "Create a repository",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			c, cfg, err := newClient(flags)
+			if len(args) < 2 {
+				return fmt.Errorf("project and name are required")
+			}
+			project := args[0]
+			name := args[1]
+
+			c, _, err := newClient(flags)
 			if err != nil {
 				return err
 			}
-			var project, name string
-			if len(args) >= 2 {
-				project = args[0]
-				name = args[1]
-			} else if len(args) == 1 && cfg.DefaultProject != "" {
-				project = cfg.DefaultProject
-				name = args[0]
-			} else {
-				return fmt.Errorf("project and name are required")
-			}
-
 			r, err := c.CreateRepository(context.Background(), project, name, description, forkable)
 			if err != nil {
 				return err
@@ -127,7 +146,10 @@ func newRepoCreateCmd(flags *GlobalFlags) *cobra.Command {
 			if flags.JSON || flags.Format != "" {
 				return printFormatted(flags, r)
 			}
-			fmt.Fprintf(cmd.ErrOrStderr(), "✓ Repository '%s/%s' created\n", project, r.Slug)
+
+			tf := output.NewTableFormatter(repoColumns(), flags.NoColor)
+			rows := [][]string{repoRow(*r)}
+			fmt.Print(tf.FormatRows(rows))
 			return nil
 		},
 	}
@@ -143,7 +165,7 @@ func newRepoDeleteCmd(flags *GlobalFlags) *cobra.Command {
 		Use:   "delete [project] [repo]",
 		Short: "Delete a repository [destructive]",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			_, cfg, err := newClient(flags)
+			c, cfg, err := newClient(flags)
 			if err != nil {
 				return err
 			}
@@ -151,18 +173,13 @@ func newRepoDeleteCmd(flags *GlobalFlags) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			name := project + "/" + repo
-			if !ConfirmDestructive("repository", name, confirm, understand) {
+			if !ConfirmDestructive("repository", repo, confirm, understand) {
 				return fmt.Errorf("deletion cancelled")
-			}
-			c, _, err := newClient(flags)
-			if err != nil {
-				return err
 			}
 			if err := c.DeleteRepository(context.Background(), project, repo); err != nil {
 				return err
 			}
-			fmt.Fprintf(cmd.ErrOrStderr(), "✓ Repository '%s' deleted\n", name)
+			fmt.Fprintf(cmd.ErrOrStderr(), "Repository '%s' deleted\n", repo)
 			return nil
 		},
 	}
@@ -177,11 +194,19 @@ func newRepoUseCmd(flags *GlobalFlags) *cobra.Command {
 		Short: "Set default project and repository",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			configDir := config.ConfigDir()
-			if err := config.SaveProfile(configDir, flags.Profile, "", args[0], args[1]); err != nil {
+			project := args[0]
+			repo := args[1]
+
+			cfg, err := config.Load(flags.Profile, "")
+			if err != nil {
 				return err
 			}
-			fmt.Fprintf(cmd.ErrOrStderr(), "✓ Default set to %s/%s\n", args[0], args[1])
+
+			configDir := config.ConfigDir()
+			if err := config.SaveProfile(configDir, flags.Profile, cfg.URL, project, repo); err != nil {
+				return err
+			}
+			fmt.Fprintf(cmd.ErrOrStderr(), "Default context set to %s/%s\n", project, repo)
 			return nil
 		},
 	}
@@ -192,10 +217,11 @@ func newRepoClearCmd(flags *GlobalFlags) *cobra.Command {
 		Use:   "clear",
 		Short: "Clear default project and repository",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := config.ClearDefaults(config.ConfigDir(), flags.Profile); err != nil {
+			configDir := config.ConfigDir()
+			if err := config.ClearDefaults(configDir, flags.Profile); err != nil {
 				return err
 			}
-			fmt.Fprintln(cmd.ErrOrStderr(), "✓ Defaults cleared")
+			fmt.Fprintln(cmd.ErrOrStderr(), "Default context cleared")
 			return nil
 		},
 	}

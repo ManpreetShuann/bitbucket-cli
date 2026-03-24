@@ -10,6 +10,7 @@ import (
 
 	"github.com/manu/bb/internal/client"
 	"github.com/manu/bb/internal/config"
+	"github.com/manu/bb/internal/output"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 )
@@ -33,24 +34,25 @@ func newAuthLoginCmd(flags *GlobalFlags) *cobra.Command {
 		Short: "Authenticate with Bitbucket Server",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			profile := flags.Profile
-			reader := bufio.NewReader(os.Stdin)
+			scanner := bufio.NewScanner(os.Stdin)
 
 			if url == "" {
-				fmt.Fprint(os.Stderr, "Bitbucket Server URL: ")
-				input, _ := reader.ReadString('\n')
-				url = strings.TrimSpace(input)
+				fmt.Fprintf(os.Stderr, "Bitbucket Server URL: ")
+				if scanner.Scan() {
+					url = strings.TrimSpace(scanner.Text())
+				}
 			}
 			if url == "" {
 				return fmt.Errorf("URL is required")
 			}
 
 			if token == "" {
-				fmt.Fprint(os.Stderr, "Personal access token: ")
+				fmt.Fprintf(os.Stderr, "Personal access token: ")
 				tokenBytes, err := term.ReadPassword(int(os.Stdin.Fd()))
 				if err != nil {
-					// Fallback for non-TTY
-					input, _ := reader.ReadString('\n')
-					token = strings.TrimSpace(input)
+					if scanner.Scan() {
+						token = strings.TrimSpace(scanner.Text())
+					}
 				} else {
 					token = string(tokenBytes)
 					fmt.Fprintln(os.Stderr)
@@ -60,12 +62,17 @@ func newAuthLoginCmd(flags *GlobalFlags) *cobra.Command {
 				return fmt.Errorf("token is required")
 			}
 
-			// Validate by calling the API
 			c := client.New(url, token)
-			var user client.User
-			err := c.Get(context.Background(), "/users", nil, &user)
-			// Ignore error — just testing connectivity
-			_ = err
+			ctx := context.Background()
+			resp, err := c.FindUser(ctx, "", 0, 1)
+			if err != nil {
+				return fmt.Errorf("authentication failed: %w", err)
+			}
+			var displayName, name string
+			if len(resp.Values) > 0 {
+				displayName = resp.Values[0].DisplayName
+				name = resp.Values[0].Name
+			}
 
 			configDir := config.ConfigDir()
 			if err := config.SaveProfile(configDir, profile, url, "", ""); err != nil {
@@ -76,7 +83,7 @@ func newAuthLoginCmd(flags *GlobalFlags) *cobra.Command {
 				return fmt.Errorf("failed to save credentials: %w", err)
 			}
 
-			fmt.Fprintf(os.Stderr, "✓ Logged in to %s (profile: %s)\n", url, profile)
+			fmt.Fprintf(os.Stderr, "✓ Authenticated as %s (%s)\n", displayName, name)
 			return nil
 		},
 	}
@@ -95,7 +102,7 @@ func newAuthLogoutCmd(flags *GlobalFlags) *cobra.Command {
 			if err := config.RemoveCredentials(credsPath, flags.Profile); err != nil {
 				return err
 			}
-			fmt.Fprintf(os.Stderr, "✓ Logged out (profile: %s)\n", flags.Profile)
+			fmt.Fprintf(os.Stderr, "Logged out from profile '%s'\n", flags.Profile)
 			return nil
 		},
 	}
@@ -106,28 +113,43 @@ func newAuthStatusCmd(flags *GlobalFlags) *cobra.Command {
 		Use:   "status",
 		Short: "Show authentication status",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cfg, err := config.Load(flags.Profile, "")
+			c, cfg, err := newClient(flags)
 			if err != nil {
 				return err
 			}
+			ctx := context.Background()
+			resp, err := c.FindUser(ctx, "", 0, 1)
+			if err != nil {
+				return err
+			}
+			var userName string
+			if len(resp.Values) > 0 {
+				userName = resp.Values[0].DisplayName
+			}
 
-			fmt.Printf("Profile: %s\n", cfg.Profile)
-			if cfg.URL != "" {
-				fmt.Printf("URL:     %s\n", cfg.URL)
-			} else {
-				fmt.Println("URL:     (not set)")
+			type statusInfo struct {
+				Profile string `json:"profile"`
+				URL     string `json:"url"`
+				User    string `json:"user"`
 			}
-			if cfg.Token != "" {
-				fmt.Println("Auth:    ✓ Token configured")
-			} else {
-				fmt.Println("Auth:    ✗ No token")
+			info := statusInfo{
+				Profile: cfg.Profile,
+				URL:     cfg.URL,
+				User:    userName,
 			}
-			if cfg.DefaultProject != "" {
-				fmt.Printf("Project: %s\n", cfg.DefaultProject)
+
+			if flags.JSON || flags.Format != "" {
+				return printFormatted(flags, info)
 			}
-			if cfg.DefaultRepo != "" {
-				fmt.Printf("Repo:    %s\n", cfg.DefaultRepo)
+
+			cols := []output.Column{
+				{Header: "PROFILE", Width: 15},
+				{Header: "URL", Width: 40},
+				{Header: "USER", Width: 25},
 			}
+			tf := output.NewTableFormatter(cols, flags.NoColor)
+			rows := [][]string{{info.Profile, info.URL, info.User}}
+			fmt.Print(tf.FormatRows(rows))
 			return nil
 		},
 	}

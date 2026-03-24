@@ -1,31 +1,43 @@
 # Changelog
 
-All notable changes to this project are documented in [GitHub Releases](https://github.com/ManpreetShuann/bitbucket-cli/releases).
+All notable changes to this project will be documented in this file.
 
-Release notes are auto-generated from [Conventional Commits](https://www.conventionalcommits.org/) via [GoReleaser](https://goreleaser.com/).
+## [0.1.3](https://github.com/ManpreetShuann/bitbucket-cli/releases/tag/v0.1.3) — 2026-03-24
 
-## [v0.1.2](https://github.com/ManpreetShuann/bitbucket-cli/releases/tag/v0.1.2) — 2026-03-24
+### Documentation
 
-### Fixes
+- add CODE_OF_CONDUCT, SECURITY, CHANGELOG, and auto-changelog workflow
 
-- Handle all unchecked error returns flagged by errcheck linter
-- Build golangci-lint from source to match current Go version
-
-## [v0.1.1](https://github.com/ManpreetShuann/bitbucket-cli/releases/tag/v0.1.1) — 2026-03-24
+## [0.1.2](https://github.com/ManpreetShuann/bitbucket-cli/releases/tag/v0.1.2) — 2026-03-24
 
 ### Fixes
 
-- Lower go directive to 1.22 for golangci-lint compatibility
-- Auth status/login now show the authenticated user, not first alphabetical user
+- handle all unchecked error returns flagged by errcheck linter
+- build golangci-lint from source to match current Go version
 
-## [v0.1.0](https://github.com/ManpreetShuann/bitbucket-cli/releases/tag/v0.1.0) — 2026-03-24
+## [0.1.1](https://github.com/ManpreetShuann/bitbucket-cli/releases/tag/v0.1.1) — 2026-03-24
 
-### Initial Release
+### Fixes
 
-- 66+ commands across 12 resource groups (projects, repos, branches, tags, PRs, comments, tasks, commits, files, search, users, dashboard, attachments)
-- Profile-based authentication with multi-instance support
-- Flexible output: table, JSON, Go templates
-- Two-tier safety model for dangerous and destructive operations
-- Shell completions for Bash, Zsh, Fish, PowerShell
-- Automatic retry with exponential backoff on 429/503
-- Debug mode for HTTP request/response inspection
+- lower go directive to 1.22 — minimum required, fixes golangci-lint compatibility
+- auth status/login now show the authenticated user, not first alphabetical user
+
+## [0.1.0](https://github.com/ManpreetShuann/bitbucket-cli/releases/tag/v0.1.0) — 2026-03-24
+
+### Documentation
+
+- add implementation plan for bb CLI
+- fix spec review issues in bb CLI design
+- add design spec for bb CLI
+
+### Features
+
+- add all 66 Cobra commands across 12 resource groups and README
+- implement complete Bitbucket Server CLI (bb)
+
+### Miscellaneous
+
+- open-source setup — rename module, add LICENSE, CI, release, goreleaser, issue templates, CONTRIBUTING
+- remove internal planning docs before open-sourcing
+
+

@@ -25,18 +25,9 @@ Wraps the Bitbucket Server REST API with Git-style subcommands, profile-based au
 
 ## Installation
 
-### From Source
+### go install
 
 Requires **Go 1.25+**:
-
-```bash
-git clone https://github.com/ManpreetShuann/bitbucket-cli.git
-cd bitbucket-cli
-make build        # builds binary to bin/bb
-make install      # installs to $GOPATH/bin
-```
-
-### go install
 
 ```bash
 go install github.com/ManpreetShuann/bitbucket-cli/cmd/bb@latest
@@ -45,6 +36,15 @@ go install github.com/ManpreetShuann/bitbucket-cli/cmd/bb@latest
 ### Pre-built binaries
 
 Download for your platform from the [releases page](https://github.com/ManpreetShuann/bitbucket-cli/releases).
+
+### From Source
+
+```bash
+git clone https://github.com/ManpreetShuann/bitbucket-cli.git
+cd bitbucket-cli
+make build        # builds binary to bin/bb
+make install      # installs to $GOPATH/bin
+```
 
 The version is automatically set from `git describe --tags` at build time.
 
@@ -445,6 +445,16 @@ make test      # Run tests with race detector and coverage
 make lint      # Run golangci-lint
 make clean     # Remove build artifacts
 ```
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, project structure, and how to submit changes.
+
+Please note that this project follows a [Code of Conduct](CODE_OF_CONDUCT.md).
+
+## Security
+
+To report a vulnerability, see [SECURITY.md](SECURITY.md).
 
 ## License
 

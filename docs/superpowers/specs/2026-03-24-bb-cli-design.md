@@ -32,8 +32,8 @@ bb/
 │   ├── cmd/
 │   │   ├── root.go              # Root command, global flags
 │   │   ├── auth.go              # bb auth login / logout / status
-│   │   ├── project.go           # bb project list / get
-│   │   ├── repo.go              # bb repo list / get / create / use / clear
+│   │   ├── project.go           # bb project list / get / delete
+│   │   ├── repo.go              # bb repo list / get / create / delete / use / clear
 │   │   ├── branch.go            # bb branch list / create / default / delete
 │   │   ├── tag.go               # bb tag list / delete
 │   │   ├── pr.go                # bb pr list / get / create / update / merge / ...
@@ -88,12 +88,14 @@ bb
 │
 ├── project
 │   ├── list                     # list_projects
-│   └── get <key>                # get_project
+│   ├── get <key>                # get_project
+│   └── delete <key>             # delete_project [destructive]
 │
 ├── repo
 │   ├── list <project>           # list_repositories
 │   ├── get <project> <slug>     # get_repository
 │   ├── create <project> <name>  # create_repository (--description, --forkable)
+│   ├── delete <project> <slug>  # delete_repository [destructive]
 │   ├── use <project> <repo>     # Set default project/repo context
 │   └── clear                    # Clear defaults
 │
@@ -160,7 +162,7 @@ bb
 │   └── find <project> <repo> <pattern>
 │
 ├── search
-│   └── code <query>   # --project, --repo, --extension, --language
+│   └── code <query>   # --project, --repo
 │
 ├── user
 │   └── find <query>
@@ -187,15 +189,15 @@ bb
 | `--profile` | `default` | Config profile |
 | `--json` | `false` | JSON output |
 | `--format` | `""` | Go template |
-| `--limit` | `25` | Pagination limit |
 | `--no-color` | `false` | Disable colors |
+| `--debug` | `false` | Print HTTP request/response details to stderr |
 
 ### Pagination Flags (on list commands)
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `--start` | `0` | Pagination offset |
-| `--limit` | `25` | Items per page |
+| `--limit` | `25` | Items per page (1–1000) |
+| `--page` | `1` | Page number (1-based, computed as `(page-1)*limit` for API `start` param) |
 | `--all` | `false` | Auto-paginate all results |
 
 ---
@@ -216,6 +218,13 @@ All requests go to `{baseURL}/rest/api/1.0/...` with `Authorization: Bearer {tok
 - `/rest/search/latest/` — code search
 - `/rest/branch-utils/1.0/` — branch deletion
 - `/rest/git/1.0/` — tag deletion
+
+### Timeout & Retry
+
+- Default request timeout: 30 seconds (configurable via `HTTP_TIMEOUT` env var or config).
+- Retry on `429 Too Many Requests` and `503 Service Unavailable` with exponential backoff (3 attempts, 1s/2s/4s delays).
+- No retry on `4xx` client errors (except 429) or network errors.
+- `--debug` flag logs request method, URL, status code, and duration to stderr.
 
 ### Pagination
 
@@ -256,10 +265,16 @@ Ported from Python `validation.py`:
 | Project key | `~?[A-Za-z0-9_]{1,128}` |
 | Repo slug | `[A-Za-z0-9][A-Za-z0-9._-]*` |
 | Commit ID | `[0-9a-fA-F]{4,40}` |
-| Branch/tag name | No `//`, no trailing `/`, max 256 chars |
+| Branch/tag name | Must start with `[A-Za-z0-9]`, no `//`, no trailing `/`, max 256 chars |
 | Path | No `..`, no leading `/`, no null bytes |
 | Limit | Clamped 1–1000 (default 25) |
 | Context lines | Clamped 0–100 (default 10) |
+| PR state | One of: `OPEN`, `DECLINED`, `MERGED`, `ALL` |
+| PR direction | One of: `INCOMING`, `OUTGOING` |
+| PR role | One of: `AUTHOR`, `REVIEWER`, `PARTICIPANT` |
+| PR order | One of: `OLDEST`, `NEWEST` |
+| Task state | One of: `OPEN`, `RESOLVED` |
+| Comment severity | One of: `NORMAL`, `BLOCKER` |
 
 ---
 
@@ -438,6 +453,21 @@ type Task struct {
     ID         int
     Text, State string
 }
+
+type Links struct {
+    Clone []Link `json:"clone"`
+    Self  []Link `json:"self"`
+}
+
+type Link struct {
+    Href string `json:"href"`
+    Name string `json:"name"`
+}
+
+type Person struct {
+    Name         string `json:"name"`
+    EmailAddress string `json:"emailAddress"`
+}
 ```
 
 All types carry JSON struct tags mapping to Bitbucket API field names. `Version` fields support optimistic locking on updates/deletes.
@@ -469,6 +499,14 @@ lint:    golangci-lint run
 ```
 
 Single static binary. Cross-compile via `GOOS`/`GOARCH`.
+
+### Version
+
+Version is injected via ldflags into `main.version` and wired to Cobra's `rootCmd.Version` field. `bb --version` prints `bb version <tag>`.
+
+### Shell Completions
+
+Cobra provides built-in completion generation: `bb completion bash|zsh|fish`.
 
 ---
 

@@ -64,14 +64,14 @@ func newAuthLoginCmd(flags *GlobalFlags) *cobra.Command {
 
 			c := client.New(url, token)
 			ctx := context.Background()
-			resp, err := c.FindUser(ctx, "", 0, 1)
+			user, err := c.CurrentUser(ctx)
 			if err != nil {
 				return fmt.Errorf("authentication failed: %w", err)
 			}
 			var displayName, name string
-			if len(resp.Values) > 0 {
-				displayName = resp.Values[0].DisplayName
-				name = resp.Values[0].Name
+			if user != nil {
+				displayName = user.DisplayName
+				name = user.Name
 			}
 
 			configDir := config.ConfigDir()
@@ -118,13 +118,13 @@ func newAuthStatusCmd(flags *GlobalFlags) *cobra.Command {
 				return err
 			}
 			ctx := context.Background()
-			resp, err := c.FindUser(ctx, "", 0, 1)
+			user, err := c.CurrentUser(ctx)
 			if err != nil {
 				return err
 			}
 			var userName string
-			if len(resp.Values) > 0 {
-				userName = resp.Values[0].DisplayName
+			if user != nil {
+				userName = user.DisplayName
 			}
 
 			type statusInfo struct {

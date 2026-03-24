@@ -27,7 +27,7 @@ Wraps the Bitbucket Server REST API with Git-style subcommands, profile-based au
 
 ### From Source
 
-Requires **Go 1.22+**:
+Requires **Go 1.25+**:
 
 ```bash
 git clone https://github.com/ManpreetShuann/bitbucket-cli.git

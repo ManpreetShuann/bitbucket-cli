@@ -4,7 +4,7 @@ Thanks for your interest in contributing! Here's everything you need to get star
 
 ## Prerequisites
 
-- **Go 1.22+** — [install](https://go.dev/dl/)
+- **Go 1.25+** — [install](https://go.dev/dl/)
 - **golangci-lint** — `go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest`
 - A running **Bitbucket Server** instance (for manual testing)
 

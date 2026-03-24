@@ -10,12 +10,14 @@ import (
 
 // SaveCredentials stores a token for a profile in credentials.yaml with 0600 permissions.
 func SaveCredentials(credsPath, profile, token string) error {
-	os.MkdirAll(filepath.Dir(credsPath), 0755)
+	if err := os.MkdirAll(filepath.Dir(credsPath), 0755); err != nil {
+		return err
+	}
 
 	v := viper.New()
 	v.SetConfigFile(credsPath)
 	v.SetConfigType("yaml")
-	v.ReadInConfig()
+	_ = v.ReadInConfig() // ignore: file may not exist yet
 
 	v.Set(fmt.Sprintf("profiles.%s.token", profile), token)
 

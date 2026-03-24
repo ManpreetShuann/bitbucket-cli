@@ -20,7 +20,7 @@ func TestClient_Get(t *testing.T) {
 			t.Errorf("unexpected method: %s", r.Method)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]any{"key": "PROJ"})
+		_ = json.NewEncoder(w).Encode(map[string]any{"key": "PROJ"})
 	}))
 	defer server.Close()
 
@@ -41,13 +41,13 @@ func TestClient_Post(t *testing.T) {
 			t.Errorf("unexpected method: %s", r.Method)
 		}
 		var body map[string]any
-		json.NewDecoder(r.Body).Decode(&body)
+		_ = json.NewDecoder(r.Body).Decode(&body)
 		if body["name"] != "my-repo" {
 			t.Errorf("unexpected body: %v", body)
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(201)
-		json.NewEncoder(w).Encode(map[string]any{"slug": "my-repo"})
+		_ = json.NewEncoder(w).Encode(map[string]any{"slug": "my-repo"})
 	}))
 	defer server.Close()
 
@@ -67,7 +67,7 @@ func TestClient_APIError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(404)
-		json.NewEncoder(w).Encode(map[string]any{
+		_ = json.NewEncoder(w).Encode(map[string]any{
 			"errors": []map[string]any{{"message": "Project not found"}},
 		})
 	}))
@@ -97,7 +97,7 @@ func TestClient_Retry429(t *testing.T) {
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]any{"ok": true})
+		_ = json.NewEncoder(w).Encode(map[string]any{"ok": true})
 	}))
 	defer server.Close()
 
@@ -131,7 +131,7 @@ func TestGetPaged(t *testing.T) {
 		start := r.URL.Query().Get("start")
 		w.Header().Set("Content-Type", "application/json")
 		if start == "" || start == "0" {
-			json.NewEncoder(w).Encode(map[string]any{
+			_ = json.NewEncoder(w).Encode(map[string]any{
 				"values":        []map[string]any{{"key": "PROJ1"}, {"key": "PROJ2"}},
 				"size":          2,
 				"start":         0,
@@ -140,7 +140,7 @@ func TestGetPaged(t *testing.T) {
 				"nextPageStart": 2,
 			})
 		} else {
-			json.NewEncoder(w).Encode(map[string]any{
+			_ = json.NewEncoder(w).Encode(map[string]any{
 				"values":     []map[string]any{{"key": "PROJ3"}},
 				"size":       1,
 				"start":      2,

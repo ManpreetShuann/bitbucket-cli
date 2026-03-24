@@ -27,20 +27,24 @@ func TestLoadConfig_FromFile(t *testing.T) {
 	configPath := filepath.Join(dir, "config.yaml")
 	credsPath := filepath.Join(dir, "credentials.yaml")
 
-	os.WriteFile(configPath, []byte(`
+	if err := os.WriteFile(configPath, []byte(`
 current-profile: default
 profiles:
   default:
     url: https://file.example.com
     default-project: PROJ
     default-repo: my-repo
-`), 0644)
+`), 0644); err != nil {
+		t.Fatalf("WriteFile error: %v", err)
+	}
 
-	os.WriteFile(credsPath, []byte(`
+	if err := os.WriteFile(credsPath, []byte(`
 profiles:
   default:
     token: file-token
-`), 0600)
+`), 0600); err != nil {
+		t.Fatalf("WriteFile error: %v", err)
+	}
 
 	cfg, err := LoadFromDir(dir, "default")
 	if err != nil {

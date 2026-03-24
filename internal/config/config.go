@@ -42,7 +42,7 @@ func LoadFromDir(dir, profile string) (*Config, error) {
 	v.SetConfigName("config")
 	v.SetConfigType("yaml")
 	v.AddConfigPath(dir)
-	v.ReadInConfig()
+	_ = v.ReadInConfig() // ignore: file may not exist yet
 
 	profilePrefix := fmt.Sprintf("profiles.%s", profile)
 
@@ -70,7 +70,7 @@ func SaveProfile(configDir, profile, url, defaultProject, defaultRepo string) er
 	v := viper.New()
 	v.SetConfigFile(configPath)
 	v.SetConfigType("yaml")
-	v.ReadInConfig()
+	_ = v.ReadInConfig() // ignore: file may not exist yet
 
 	prefix := fmt.Sprintf("profiles.%s", profile)
 	v.Set(prefix+".url", url)
@@ -82,7 +82,9 @@ func SaveProfile(configDir, profile, url, defaultProject, defaultRepo string) er
 	}
 	v.Set("current-profile", profile)
 
-	os.MkdirAll(configDir, 0755)
+	if err := os.MkdirAll(configDir, 0755); err != nil {
+		return err
+	}
 	return v.WriteConfigAs(configPath)
 }
 
@@ -92,7 +94,7 @@ func ClearDefaults(configDir, profile string) error {
 	v := viper.New()
 	v.SetConfigFile(configPath)
 	v.SetConfigType("yaml")
-	v.ReadInConfig()
+	_ = v.ReadInConfig() // ignore: file may not exist yet
 
 	prefix := fmt.Sprintf("profiles.%s", profile)
 	v.Set(prefix+".default-project", "")

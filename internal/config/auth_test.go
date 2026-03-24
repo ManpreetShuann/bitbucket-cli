@@ -36,7 +36,9 @@ func TestRemoveCredentials(t *testing.T) {
 	dir := t.TempDir()
 	credsPath := filepath.Join(dir, "credentials.yaml")
 
-	SaveCredentials(credsPath, "test-profile", "my-token")
+	if err := SaveCredentials(credsPath, "test-profile", "my-token"); err != nil {
+		t.Fatalf("SaveCredentials error: %v", err)
+	}
 	err := RemoveCredentials(credsPath, "test-profile")
 	if err != nil {
 		t.Fatalf("RemoveCredentials error: %v", err)

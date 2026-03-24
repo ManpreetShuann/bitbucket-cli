@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/manu/bb/internal/validation"
+	"github.com/ManpreetShuann/bitbucket-cli/internal/validation"
 )
 
 // PagedResponse represents a paginated API response.

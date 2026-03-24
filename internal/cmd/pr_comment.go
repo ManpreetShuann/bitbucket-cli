@@ -5,8 +5,8 @@ import (
 "fmt"
 "strconv"
 
-"github.com/manu/bb/internal/client"
-"github.com/manu/bb/internal/output"
+"github.com/ManpreetShuann/bitbucket-cli/internal/client"
+"github.com/ManpreetShuann/bitbucket-cli/internal/output"
 "github.com/spf13/cobra"
 )
 

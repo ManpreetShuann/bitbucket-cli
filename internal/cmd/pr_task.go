@@ -6,8 +6,8 @@ import (
 "strconv"
 "strings"
 
-"github.com/manu/bb/internal/output"
-"github.com/manu/bb/internal/validation"
+"github.com/ManpreetShuann/bitbucket-cli/internal/output"
+"github.com/ManpreetShuann/bitbucket-cli/internal/validation"
 "github.com/spf13/cobra"
 )
 

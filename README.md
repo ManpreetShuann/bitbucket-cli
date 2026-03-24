@@ -2,7 +2,10 @@
 
 > A fast, ergonomic command-line interface for **Bitbucket Server** (formerly Stash).
 
-`Go` | `66+ commands` | `12 resource groups` | `MIT License`
+[![CI](https://github.com/ManpreetShuann/bitbucket-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/ManpreetShuann/bitbucket-cli/actions/workflows/ci.yml)
+[![Release](https://github.com/ManpreetShuann/bitbucket-cli/actions/workflows/release.yml/badge.svg)](https://github.com/ManpreetShuann/bitbucket-cli/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Go Reference](https://pkg.go.dev/badge/github.com/ManpreetShuann/bitbucket-cli.svg)](https://pkg.go.dev/github.com/ManpreetShuann/bitbucket-cli)
 
 ---
 
@@ -27,11 +30,21 @@ Wraps the Bitbucket Server REST API with Git-style subcommands, profile-based au
 Requires **Go 1.22+**:
 
 ```bash
-git clone https://github.com/manu/bb.git
-cd bb
+git clone https://github.com/ManpreetShuann/bitbucket-cli.git
+cd bitbucket-cli
 make build        # builds binary to bin/bb
 make install      # installs to $GOPATH/bin
 ```
+
+### go install
+
+```bash
+go install github.com/ManpreetShuann/bitbucket-cli/cmd/bb@latest
+```
+
+### Pre-built binaries
+
+Download for your platform from the [releases page](https://github.com/ManpreetShuann/bitbucket-cli/releases).
 
 The version is automatically set from `git describe --tags` at build time.
 

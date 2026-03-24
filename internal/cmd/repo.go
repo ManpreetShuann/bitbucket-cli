@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/manu/bb/internal/client"
-	"github.com/manu/bb/internal/config"
-	"github.com/manu/bb/internal/output"
-	"github.com/manu/bb/internal/validation"
+	"github.com/ManpreetShuann/bitbucket-cli/internal/client"
+	"github.com/ManpreetShuann/bitbucket-cli/internal/config"
+	"github.com/ManpreetShuann/bitbucket-cli/internal/output"
+	"github.com/ManpreetShuann/bitbucket-cli/internal/validation"
 	"github.com/spf13/cobra"
 )
 

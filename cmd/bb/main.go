@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/manu/bb/internal/cmd"
+	"github.com/ManpreetShuann/bitbucket-cli/internal/cmd"
 )
 
 var version = "dev"

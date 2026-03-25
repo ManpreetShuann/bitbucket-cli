@@ -47,6 +47,20 @@ changelog:
       - Merge pull request
       - Merge branch
 
+brews:
+  - repository:
+      owner: ManpreetShuann
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    directory: Formula
+    homepage: "https://github.com/ManpreetShuann/bitbucket-cli"
+    description: "A command-line interface for Bitbucket"
+    license: "MIT"
+    install: |
+      bin.install "bb"
+    test: |
+      system "#{bin}/bb", "version"
+
 release:
   github:
     owner: ManpreetShuann

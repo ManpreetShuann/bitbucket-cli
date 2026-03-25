@@ -25,6 +25,13 @@ Wraps the Bitbucket Server REST API with Git-style subcommands, profile-based au
 
 ## Installation
 
+### Homebrew
+
+```bash
+brew tap ManpreetShuann/tap
+brew install bb
+```
+
 ### go install
 
 Requires **Go 1.25+**:

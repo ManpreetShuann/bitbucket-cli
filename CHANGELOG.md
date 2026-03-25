@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.4](https://github.com/ManpreetShuann/bitbucket-cli/releases/tag/v0.1.4) — 2026-03-25
+
+### Documentation
+
+- update CHANGELOG.md for v0.1.3
+
+### Features
+
+- add Homebrew tap support via GoReleaser
+
 ## [0.1.3](https://github.com/ManpreetShuann/bitbucket-cli/releases/tag/v0.1.3) — 2026-03-24
 
 ### Documentation
